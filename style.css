@@ -286,6 +286,38 @@ main {
   word-break: break-all;
 }
 
+/* ===== Paste text ===== */
+.paste-card h2 {
+  margin-bottom: 4px;
+}
+
+.paste-hint {
+  color: var(--muted, #666);
+  font-size: 0.9rem;
+  margin-bottom: 12px;
+}
+
+.paste-card textarea {
+  width: 100%;
+  padding: 12px 14px;
+  font-size: 1rem;
+  line-height: 1.5;
+  font-family: inherit;
+  border: 1.5px solid #d6deea;
+  border-radius: 10px;
+  background: #fff;
+  resize: vertical;
+  min-height: 140px;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.paste-card textarea:focus {
+  outline: none;
+  border-color: var(--brand, #4a7cff);
+  box-shadow: 0 0 0 3px rgba(74, 124, 255, 0.12);
+}
+
 /* ===== Actions (copy / download) ===== */
 .actions {
   display: flex;

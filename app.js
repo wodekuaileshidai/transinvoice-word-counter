@@ -19,6 +19,9 @@
   const errorMsg = document.getElementById('errorMsg');
   const errorRetry = document.getElementById('errorRetry');
 
+  const pasteText = document.getElementById('pasteText');
+  const pasteCountBtn = document.getElementById('pasteCountBtn');
+
   const fileNameEl = document.getElementById('fileName');
   const statWords = document.getElementById('statWords');
   const statChars = document.getElementById('statChars');
@@ -328,6 +331,19 @@
     if (e.target.files && e.target.files[0]) {
       handleFile(e.target.files[0]);
     }
+  });
+
+  // ---- Paste text counting ------------------------------------------------
+  pasteCountBtn.addEventListener('click', () => {
+    const raw = pasteText.value;
+    if (!raw.trim()) {
+      showToast('Please paste some text first');
+      return;
+    }
+    hide(uploadCard);
+    const metrics = countMetrics(raw);
+    renderResults('(pasted text)', metrics, raw, []);
+    showToast('Counted ✓');
   });
 
   // Drag & drop
