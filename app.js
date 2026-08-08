@@ -23,7 +23,15 @@
   const statWords = document.getElementById('statWords');
   const statChars = document.getElementById('statChars');
   const statCJK = document.getElementById('statCJK');
+  const statCharsWithSpace = document.getElementById('statCharsWithSpace');
+  const statUnique = document.getElementById('statUnique');
+  const statLines = document.getElementById('statLines');
+  const statParagraphs = document.getElementById('statParagraphs');
   const breakdownBody = document.getElementById('breakdownBody');
+  const docInfoEl = document.getElementById('docInfo');
+  const copyBtn = document.getElementById('copyBtn');
+  const downloadBtn = document.getElementById('downloadBtn');
+  const toast = document.getElementById('toast');
 
   // ---- Regexes ------------------------------------------------------------
   // Han (CJK ideographs) characters
@@ -78,6 +86,20 @@
     // Common translator total: Latin words + Chinese characters.
     const wordEquivalent = words + chineseChars;
 
+    // Characters with spaces (raw length of text).
+    const charsWithSpace = text.length;
+
+    // Unique words (distinct lowercase Latin words).
+    const uniqueWords = new Set(allWords.map(function (w) { return w.toLowerCase(); })).size;
+
+    // Lines: non-empty lines.
+    const lines = text.split(/\r?\n/).filter(function (l) { return l.trim() !== ''; }).length || 0;
+
+    // Paragraphs: blocks separated by one or more blank lines.
+    const paragraphs = text
+      .split(/(?:\r?\n\s*){2,}/)
+      .filter(function (p) { return p.trim() !== ''; }).length || 0;
+
     // ---- Breakdown: split text into Latin runs and CJK runs ---------------
     const segments = [];
     // Remove punctuation noise for breakdown clarity but keep chunks.
@@ -116,16 +138,41 @@
       charsNoSpace,
       chineseChars,
       wordEquivalent,
+      charsWithSpace,
+      uniqueWords,
+      lines,
+      paragraphs,
       segments,
       rawLength: text.length,
     };
   }
 
-  function renderResults(filename, metrics) {
+  // Last-result state for copy / download.
+  let lastFileName = '';
+  let lastMetrics = null;
+  let lastDocText = '';
+
+  function renderResults(filename, metrics, docText, docInfo) {
+    lastFileName = filename;
+    lastMetrics = metrics;
+    lastDocText = docText || '';
+
     fileNameEl.textContent = filename;
     statWords.textContent = humanize(metrics.words);
     statChars.textContent = humanize(metrics.charsNoSpace);
     statCJK.textContent = humanize(metrics.chineseChars);
+    statCharsWithSpace.textContent = humanize(metrics.charsWithSpace);
+    statUnique.textContent = humanize(metrics.uniqueWords);
+    statLines.textContent = humanize(metrics.lines);
+    statParagraphs.textContent = humanize(metrics.paragraphs);
+
+    // Document info line.
+    if (docInfo && docInfo.length) {
+      docInfoEl.textContent = docInfo.join(' · ');
+      docInfoEl.classList.remove('hidden');
+    } else {
+      docInfoEl.classList.add('hidden');
+    }
 
     // Whether the doc is Chinese/Japanese-only (no Latin words).
     const isCjkOnly = metrics.words === 0 && metrics.chineseChars > 0;
@@ -179,7 +226,7 @@
     }
     const arrayBuffer = await file.arrayBuffer();
     const result = await mammoth.extractRawText({ arrayBuffer });
-    return result.value || '';
+    return { text: result.value || '', pages: 0 };
   }
 
   const LATIN_WORD_BOUNDARY = /[A-Za-z0-9]$/; // previous token ends latin alnum
@@ -233,7 +280,7 @@
       const content = await page.getTextContent();
       fullText += joinPdfItems(content.items) + '\n';
     }
-    return fullText;
+    return { text: fullText, pages: pdf.numPages };
   }
 
   // ---- Flow control -------------------------------------------------------
@@ -245,9 +292,19 @@
     show(loadingCard);
 
     try {
-      const text = await parseFile(file);
+      const result = await parseFile(file);
+      const text = result.text;
       const metrics = countMetrics(text);
-      renderResults(file.name, metrics);
+
+      // Build document info (file name is shown separately in header).
+      const bits = [];
+      const ext = (file.name.split('.').pop() || '').toUpperCase();
+      bits.push('Type: ' + ext);
+      const mb = (file.size / (1024 * 1024)).toFixed(2);
+      bits.push('Size: ' + (file.size < 1024 * 1024 ? file.size + ' KB' : mb + ' MB'));
+      if (result.pages) bits.push('Pages: ' + result.pages);
+
+      renderResults(file.name, metrics, text, bits);
       show(resultsCard);
     } catch (err) {
       console.error(err);
@@ -298,11 +355,91 @@
   // Reset
   function reset() {
     fileInput.value = '';
+    lastFileName = '';
+    lastMetrics = null;
+    lastDocText = '';
     resetViews();
   }
   const resetBtn = document.getElementById('resetBtn');
   resetBtn.addEventListener('click', reset);
   errorRetry.addEventListener('click', reset);
+
+  // ---- Toast helper -------------------------------------------------------
+  let toastTimer = null;
+  function showToast(msg) {
+    toast.textContent = msg;
+    toast.classList.remove('hidden');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () {
+      toast.classList.add('hidden');
+    }, 1800);
+  }
+
+  // ---- Build a readable text summary --------------------------------------
+  function buildSummary() {
+    if (!lastMetrics) return '';
+    const m = lastMetrics;
+    const lines = [];
+    lines.push('Word Count Summary');
+    lines.push('File: ' + lastFileName);
+    lines.push('-------------------');
+    lines.push('Words (Latin):      ' + m.words);
+    lines.push('Unique words:       ' + m.uniqueWords);
+    lines.push('Characters (no sp): ' + m.charsNoSpace);
+    lines.push('Characters (spaces):' + m.charsWithSpace);
+    lines.push('Chinese characters: ' + m.chineseChars);
+    lines.push('Lines:              ' + m.lines);
+    lines.push('Paragraphs:         ' + m.paragraphs);
+    lines.push('Word equivalent:    ' + m.wordEquivalent + ' (Latin words + CJK chars)');
+    return lines.join('\n');
+  }
+
+  // Copy summary to clipboard (with fallback for older browsers).
+  copyBtn.addEventListener('click', function () {
+    const summary = buildSummary();
+    if (!summary) return;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(summary).then(function () {
+        showToast('Copied to clipboard ✓');
+      }, function () {
+        fallbackCopy(summary);
+      });
+    } else {
+      fallbackCopy(summary);
+    }
+  });
+
+  function fallbackCopy(text) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try {
+      document.execCommand('copy');
+      showToast('Copied to clipboard ✓');
+    } catch (e) {
+      showToast('Copy failed — use Download instead');
+    }
+    document.body.removeChild(ta);
+  }
+
+  // Download summary as a .txt file.
+  downloadBtn.addEventListener('click', function () {
+    const summary = buildSummary();
+    if (!summary) return;
+    const blob = new Blob([summary], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'word-count-summary.txt';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('Downloaded ✓');
+  });
 
   // Initial state
   resetViews();

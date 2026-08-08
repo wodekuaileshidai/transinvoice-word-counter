@@ -266,6 +266,51 @@ main {
   margin-top: 4px;
 }
 
+/* Extra metric grid (secondary) */
+.extra-grid {
+  margin-top: -6px;
+}
+
+.extra-grid .stat-value {
+  font-size: clamp(1.3rem, 5vw, 1.8rem);
+}
+
+/* Document info line */
+.doc-info {
+  font-size: 0.82rem;
+  color: var(--muted);
+  background: #eef2fb;
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-bottom: 16px;
+  word-break: break-all;
+}
+
+/* ===== Actions (copy / download) ===== */
+.actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+
+.actions .btn {
+  flex: 1;
+  min-width: 160px;
+}
+
+.toast {
+  margin-top: 12px;
+  text-align: center;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--green);
+  background: #eafaf0;
+  border: 1px solid #bfe8cf;
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
 /* ===== Breakdown ===== */
 .breakdown {
   border-top: 1px solid var(--border);

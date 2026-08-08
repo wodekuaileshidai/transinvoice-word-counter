@@ -49,6 +49,9 @@
         <button type="button" class="btn btn-ghost" id="resetBtn">&times; New count</button>
       </div>
 
+      <!-- Document info -->
+      <div class="doc-info" id="docInfo"></div>
+
       <div class="stats-grid">
         <div class="stat">
           <div class="stat-value" id="statWords">0</div>
@@ -67,10 +70,41 @@
         </div>
       </div>
 
+      <!-- Extra metrics -->
+      <div class="stats-grid extra-grid">
+        <div class="stat">
+          <div class="stat-value" id="statCharsWithSpace">0</div>
+          <div class="stat-label">Characters <span class="no-space">(with spaces)</span></div>
+          <div class="stat-hint">Total characters incl. whitespace</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value" id="statUnique">0</div>
+          <div class="stat-label">Unique Words</div>
+          <div class="stat-hint">Distinct Latin words used</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value" id="statLines">0</div>
+          <div class="stat-label">Lines</div>
+          <div class="stat-hint">Non-empty lines / paragraphs</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value" id="statParagraphs">0</div>
+          <div class="stat-label">Paragraphs</div>
+          <div class="stat-hint">Blocks separated by blank lines</div>
+        </div>
+      </div>
+
       <div class="breakdown" id="breakdown">
         <h3>Breakdown</h3>
         <div id="breakdownBody" class="breakdown-body"></div>
       </div>
+
+      <!-- Actions -->
+      <div class="actions">
+        <button type="button" class="btn btn-primary" id="copyBtn">📋 Copy summary</button>
+        <button type="button" class="btn btn-secondary" id="downloadBtn">💾 Download .txt</button>
+      </div>
+      <div class="toast hidden" id="toast">Copied to clipboard ✓</div>
 
       <div class="note">
         <p>Numbers are estimates. Counts follow common translator conventions (Latin = words, CJK = characters).</p>
