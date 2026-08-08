@@ -302,6 +302,12 @@ main {
   font-weight: 700;
 }
 
+.bd-total {
+  margin-top: 6px;
+  background: #edf4ff;
+  border: 1px solid #d6e4ff;
+}
+
 /* ===== Note ===== */
 .note {
   margin-top: 16px;

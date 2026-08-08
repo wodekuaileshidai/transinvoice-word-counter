@@ -75,6 +75,9 @@
     const cjkMatches = text.match(HAN_RE);
     const chineseChars = cjkMatches ? cjkMatches.length : 0;
 
+    // Common translator total: Latin words + Chinese characters.
+    const wordEquivalent = words + chineseChars;
+
     // ---- Breakdown: split text into Latin runs and CJK runs ---------------
     const segments = [];
     // Remove punctuation noise for breakdown clarity but keep chunks.
@@ -112,6 +115,7 @@
       words,
       charsNoSpace,
       chineseChars,
+      wordEquivalent,
       segments,
       rawLength: text.length,
     };
@@ -123,13 +127,31 @@
     statChars.textContent = humanize(metrics.charsNoSpace);
     statCJK.textContent = humanize(metrics.chineseChars);
 
-    // Breakdown
+    // Whether the doc is Chinese/Japanese-only (no Latin words).
+    const isCjkOnly = metrics.words === 0 && metrics.chineseChars > 0;
+
+    // Breakdown: show per-language contribution with clear wording.
     let html = '';
     for (const seg of metrics.segments) {
+      const label = isCjkOnly && seg.kind.startsWith('Latin') && seg.words === 0
+        ? 'Latin (English): '
+        : seg.kind;
+      const detail =
+        seg.chars > 0
+          ? `${humanize(seg.words)} words · ${humanize(seg.chars)} characters`
+          : '0 characters';
       html +=
         `<div class="bd-row">
-           <span class="bd-key">${seg.kind}</span>
-           <span class="bd-val">${humanize(seg.words)} words · ${humanize(seg.chars)} chars</span>
+           <span class="bd-key">${label}</span>
+           <span class="bd-val">${detail}</span>
+         </div>`;
+    }
+    // Add combined translator metric when it differs from plain words.
+    if (metrics.wordEquivalent !== metrics.words) {
+      html +=
+        `<div class="bd-row bd-total">
+           <span class="bd-key">Word equivalent</span>
+           <span class="bd-val">${humanize(metrics.wordEquivalent)} (Latin words + CJK chars)</span>
          </div>`;
     }
     breakdownBody.innerHTML = html;
@@ -160,6 +182,40 @@
     return result.value || '';
   }
 
+  const LATIN_WORD_BOUNDARY = /[A-Za-z0-9]$/; // previous token ends latin alnum
+  const NEXT_LATIN = /^[A-Za-z0-9]/;          // next token starts latin alnum
+
+  /**
+   * Assemble PDF text items into readable text WITHOUT mangling count metrics.
+   * pdf.js often splits a CJK passage into one item per glyph, or a Latin word
+   * into several items. We join items smartly:
+   *   - Concatenate CJK runs directly (no spaces between Han characters, else
+   *     "中文 中文" would break contiguous-run counting and look wrong).
+   *   - Insert a single space between two adjacent Latin word tokens when the
+   *     PDF did not already include one (avoids merging "hello"+"world").
+   *   - Respect hasEOL to place real line breaks.
+   */
+  function joinPdfItems(items) {
+    let out = '';
+    for (let i = 0; i < items.length; i++) {
+      const it = items[i];
+      if (!it || !it.str) {
+        if (it && it.hasEOL) out += '\n';
+        continue;
+      }
+      const prev = out;
+      if (prev && it.hasEOL) {
+        out += '\n';
+      } else if (prev && !/[ \t\n]$/.test(prev) && LATIN_WORD_BOUNDARY.test(prev) && NEXT_LATIN.test(it.str)) {
+        // "hello" followed by "world" with no space in between → add one
+        out += ' ';
+      }
+      out += it.str;
+      if (it.hasEOL) out += '\n';
+    }
+    return out;
+  }
+
   async function parsePdf(file) {
     if (typeof pdfjsLib === 'undefined') {
       throw new Error('pdf parser failed to load (check internet / library CDN).');
@@ -175,11 +231,7 @@
     for (let i = 1; i <= pdf.numPages; i++) {
       const page = await pdf.getPage(i);
       const content = await page.getTextContent();
-      let pageText = '';
-      for (const item of content.items) {
-        if (item.str) pageText += item.str + ' ';
-      }
-      fullText += pageText + '\n';
+      fullText += joinPdfItems(content.items) + '\n';
     }
     return fullText;
   }
