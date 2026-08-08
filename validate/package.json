@@ -1,0 +1,12 @@
+{
+  "name": "wc-validate",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "mammoth": "^1.8.0",
+    "pdfjs-dist": "3.11.174",
+    "docx": "^8.5.0",
+    "pdfkit": "^0.15.0"
+  }
+}

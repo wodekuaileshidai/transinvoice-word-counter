@@ -1,0 +1,10 @@
+# Dependencies (validate scripts only — never commit node_modules)
+node_modules/
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+*.log
+
+# Optional: local testing artifacts
+validate/package-lock.json

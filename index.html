@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Free Word Counter for Translators</title>
+  <meta name="description" content="Free word counter for translators — counts by words (Latin) & characters (CJK). No upload, processed in your browser." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="hero">
+    <div class="container">
+      <h1>Free Word Counter for Translators</h1>
+      <p class="tagline">Counts by words (Latin) &amp; characters (CJK).</p>
+      <p class="trust">
+        <span class="badge">🔒 No upload</span>
+        <span>Processed entirely in your browser. Your documents never leave your device.</span>
+      </p>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Upload area -->
+    <section class="card upload-card" id="uploadSection">
+      <div class="drop-zone" id="dropZone">
+        <input type="file" id="fileInput" accept=".docx,.pdf" hidden />
+        <div class="drop-content" id="dropContent">
+          <div class="icon">📄</div>
+          <p class="drop-title">Drop a document here</p>
+          <p class="drop-sub">or</p>
+          <button type="button" class="btn btn-primary" id="browseBtn">Browse files</button>
+          <p class="drop-hint">Supported: <strong>.docx</strong>, <strong>.pdf</strong></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Loading -->
+    <section class="card loading-card hidden" id="loadingCard">
+      <div class="spinner"></div>
+      <p>Parsing your document&hellip;</p>
+    </section>
+
+    <!-- Results -->
+    <section class="card results-card hidden" id="resultsCard">
+      <div class="results-head">
+        <h2>Count Results</h2>
+        <span class="filename" id="fileName"></span>
+        <button type="button" class="btn btn-ghost" id="resetBtn">&times; New count</button>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat">
+          <div class="stat-value" id="statWords">0</div>
+          <div class="stat-label">Words (Latin)</div>
+          <div class="stat-hint">For English &amp; space-separated languages</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value" id="statChars">0</div>
+          <div class="stat-label">Characters <span class="no-space">(no spaces)</span></div>
+          <div class="stat-hint">For CJK / no-space languages</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value" id="statCJK">0</div>
+          <div class="stat-label">Chinese Characters</div>
+          <div class="stat-hint">Han characters only</div>
+        </div>
+      </div>
+
+      <div class="breakdown" id="breakdown">
+        <h3>Breakdown</h3>
+        <div id="breakdownBody" class="breakdown-body"></div>
+      </div>
+
+      <div class="note">
+        <p>Numbers are estimates. Counts follow common translator conventions (Latin = words, CJK = characters).</p>
+      </div>
+    </section>
+
+    <section class="card error-card hidden" id="errorCard">
+      <div class="error-icon">⚠️</div>
+      <p id="errorMsg"></p>
+      <button type="button" class="btn btn-secondary" id="errorRetry">Try again</button>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <p>TransInvoice MVP · Free translator word counter · No data leaves your browser</p>
+    </div>
+  </footer>
+
+  <!-- Libraries via CDN (file:// + https both fine for workers) -->
+  <!-- mammoth.js for .docx -->
+  <script src="https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js"></script>
+  <!-- pdf.js for .pdf -->
+  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
